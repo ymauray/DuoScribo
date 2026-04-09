@@ -136,39 +136,38 @@ struct HomeView: View {
         NavigationStack {
             ZStack {
                 List {
+                    // Section unique pour le Tableau de Bord (Flamme + Stats + Bouton)
                     Section {
-                        VStack(spacing: 30) {
+                        VStack(spacing: 35) {
                             StreakFlameView(streak: userStats.currentStreak, isActive: hasWrittenToday)
-                                .padding(.vertical, 20)
+                                .padding(.top, 20)
                                 .onTapGesture { handleFlameTap() }
                             
-                            HStack(spacing: 20) {
+                            HStack(spacing: 15) {
                                 statCard(title: "POINTS", value: "\(userStats.totalPoints)", color: .yellow, icon: "star.fill")
                                 statCard(title: "RECORD", value: "\(userStats.longestStreak)j", color: .blue, icon: "trophy.fill")
                             }
+                            
+                            Button(action: { showingEditor = true }) {
+                                HStack {
+                                    Image(systemName: hasWrittenToday ? "pencil.and.outline" : "bolt.fill")
+                                    Text(hasWrittenToday ? "Continuer à écrire" : "Prolonger ma série")
+                                }
+                                .font(.headline)
+                                .foregroundColor(.white)
+                                .padding()
+                                .frame(maxWidth: .infinity)
+                                .background(hasWrittenToday ? Color.gray : Color.orange)
+                                .cornerRadius(16)
+                                .shadow(color: (hasWrittenToday ? Color.black : Color.orange).opacity(0.15), radius: 8, x: 0, y: 4)
+                            }
+                            .buttonStyle(.plain)
                         }
+                        .padding(.horizontal, 20) // Aligné sur les marges standards du header de section
+                        .padding(.bottom, 25)
                         .listRowBackground(Color.clear)
                         .listRowSeparator(.hidden)
                         .listRowInsets(EdgeInsets())
-                    }
-                    
-                    Section {
-                        Button(action: { showingEditor = true }) {
-                            HStack {
-                                Image(systemName: hasWrittenToday ? "pencil.and.outline" : "bolt.fill")
-                                Text(hasWrittenToday ? "Continuer à écrire" : "Prolonger ma série")
-                            }
-                            .font(.headline)
-                            .foregroundColor(.white)
-                            .padding()
-                            .frame(maxWidth: .infinity)
-                            .background(hasWrittenToday ? Color.gray : Color.orange)
-                            .cornerRadius(16)
-                        }
-                        .buttonStyle(.plain)
-                        .listRowBackground(Color.clear)
-                        .listRowSeparator(.hidden)
-                        .listRowInsets(EdgeInsets(top: 0, leading: 20, bottom: 20, trailing: 20))
                     }
                     
                     if entries.isEmpty {
@@ -309,7 +308,7 @@ struct HomeView: View {
     private func entryRow(for entry: WritingEntry) -> some View {
         VStack(alignment: .leading, spacing: 8) {
             HStack {
-                Text(entry.date, style: .time) // On affiche l'heure pour chaque texte
+                Text(entry.date, style: .time)
                     .font(.caption.bold())
                     .foregroundColor(.gray)
                 Spacer()
