@@ -9,15 +9,14 @@ targets:
     platform: iOS
     deploymentTarget: "17.0"
     sources: [Sources]
-    info:
-      UISupportedInterfaceOrientations:
-        - UIInterfaceOrientationPortrait
-        - UIInterfaceOrientationPortraitUpsideDown
-        - UIInterfaceOrientationLandscapeLeft
-        - UIInterfaceOrientationLandscapeRight
     settings:
       base:
         GENERATE_INFOPLIST_FILE: YES
+        INFOPLIST_KEY_UISupportedInterfaceOrientations:
+          - UIInterfaceOrientationPortrait
+          - UIInterfaceOrientationPortraitUpsideDown
+          - UIInterfaceOrientationLandscapeLeft
+          - UIInterfaceOrientationLandscapeRight
         INFOPLIST_KEY_UIBackgroundModes: ["remote-notification"]
         INFOPLIST_KEY_UILaunchScreen_Generation: YES
         INFOPLIST_KEY_UILaunchScreen_ImageName: SplashIcon
