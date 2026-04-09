@@ -63,7 +63,6 @@ struct StreakFlameView: View {
     }
     
     private func triggerBurst() {
-        // Effet de jaillissement
         withAnimation(.spring(response: 0.3, dampingFraction: 0.4, blendDuration: 0)) {
             burstScale = 1.4
         }
@@ -126,6 +125,13 @@ struct HomeView: View {
         return Calendar.current.isDate(lastDate, inSameDayAs: Date())
     }
     
+    private var groupedEntries: [(Date, [WritingEntry])] {
+        let groups = Dictionary(grouping: entries) { entry in
+            Calendar.current.startOfDay(for: entry.date)
+        }
+        return groups.sorted { $0.key > $1.key }
+    }
+    
     var body: some View {
         NavigationStack {
             ZStack {
@@ -165,38 +171,42 @@ struct HomeView: View {
                         .listRowInsets(EdgeInsets(top: 0, leading: 20, bottom: 20, trailing: 20))
                     }
                     
-                    Section(header: Text("VOS RÉCITS").font(.caption.bold())) {
-                        if entries.isEmpty {
+                    if entries.isEmpty {
+                        Section(header: Text("VOS RÉCITS").font(.caption.bold())) {
                             Text("Prêt à écrire ? Vos textes apparaîtront ici.")
                                 .foregroundColor(.gray)
                                 .italic()
-                        } else {
-                            ForEach(entries) { entry in
-                                entryRow(for: entry)
-                                    .contentShape(Rectangle())
-                                    .onTapGesture {
-                                        if Calendar.current.isDate(entry.date, inSameDayAs: Date()) {
-                                            editingEntry = entry
-                                        }
-                                    }
-                                    .swipeActions(edge: .trailing) {
-                                        if Calendar.current.isDate(entry.date, inSameDayAs: Date()) {
-                                            Button(role: .destructive) {
-                                                deleteEntry(entry)
-                                            } label: {
-                                                Label("Supprimer", systemImage: "trash")
+                        }
+                    } else {
+                        ForEach(groupedEntries, id: \.0) { date, dayEntries in
+                            Section(header: dailyHeader(date: date, entries: dayEntries)) {
+                                ForEach(dayEntries) { entry in
+                                    entryRow(for: entry)
+                                        .contentShape(Rectangle())
+                                        .onTapGesture {
+                                            if Calendar.current.isDate(entry.date, inSameDayAs: Date()) {
+                                                editingEntry = entry
                                             }
                                         }
-                                    }
-                                    .swipeActions(edge: .leading) {
-                                        Button {
-                                            UIPasteboard.general.string = entry.content
-                                            UINotificationFeedbackGenerator().notificationOccurred(.success)
-                                        } label: {
-                                            Label("Copier", systemImage: "doc.on.doc")
+                                        .swipeActions(edge: .trailing) {
+                                            if Calendar.current.isDate(entry.date, inSameDayAs: Date()) {
+                                                Button(role: .destructive) {
+                                                    deleteEntry(entry)
+                                                } label: {
+                                                    Label("Supprimer", systemImage: "trash")
+                                                }
+                                            }
                                         }
-                                        .tint(.blue)
-                                    }
+                                        .swipeActions(edge: .leading) {
+                                            Button {
+                                                UIPasteboard.general.string = entry.content
+                                                UINotificationFeedbackGenerator().notificationOccurred(.success)
+                                            } label: {
+                                                Label("Copier", systemImage: "doc.on.doc")
+                                            }
+                                            .tint(.blue)
+                                        }
+                                }
                             }
                         }
                     }
@@ -245,6 +255,18 @@ struct HomeView: View {
         .tint(.orange)
     }
     
+    private func dailyHeader(date: Date, entries: [WritingEntry]) -> some View {
+        let totalWords = entries.reduce(0) { $0 + $1.wordCount }
+        return HStack {
+            Text(date, style: .date)
+                .font(.caption.bold())
+            Spacer()
+            Text("\(totalWords) mots au total")
+                .font(.caption)
+                .foregroundColor(.orange)
+        }
+    }
+    
     private func handleFlameTap() {
         resetTapCount += 1
         if resetTapCount >= 7 {
@@ -257,20 +279,14 @@ struct HomeView: View {
     
     @MainActor
     private func performFullReset() {
-        // 1. Supprimer tous les récits
         for entry in entries {
             modelContext.delete(entry)
         }
-        
-        // 2. Réinitialiser les stats à zéro absolu
         userStats.totalPoints = 0
         userStats.currentStreak = 0
         userStats.longestStreak = 0
         userStats.lastWritingDate = nil
-        
-        // 3. Forcer la sauvegarde
         try? modelContext.save()
-        
         resetTapCount = 0
         UINotificationFeedbackGenerator().notificationOccurred(.warning)
     }
@@ -293,9 +309,9 @@ struct HomeView: View {
     private func entryRow(for entry: WritingEntry) -> some View {
         VStack(alignment: .leading, spacing: 8) {
             HStack {
-                Text(entry.date, style: .date)
+                Text(entry.date, style: .time) // On affiche l'heure pour chaque texte
                     .font(.caption.bold())
-                    .foregroundColor(.orange)
+                    .foregroundColor(.gray)
                 Spacer()
                 HStack(spacing: 4) {
                     if entry.wordCount >= 250 {
@@ -319,11 +335,7 @@ struct HomeView: View {
     private func deleteEntry(_ entry: WritingEntry) {
         withAnimation {
             modelContext.delete(entry)
-            
-            // On recalcule tout après suppression
             StreakManager.shared.updateStats(in: userStats, allEntries: entries.filter { $0.id != entry.id })
-            
-            // Si après suppression on n'a plus rien aujourd'hui, on remet le rappel
             if !hasWrittenToday {
                 NotificationManager.shared.scheduleDailyReminder()
             }
