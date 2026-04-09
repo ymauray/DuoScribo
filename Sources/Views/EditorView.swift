@@ -1,28 +1,31 @@
 import SwiftUI
 import SwiftData
+import AVFoundation
 
 struct EditorView: View {
     @Environment(\.modelContext) private var modelContext
     @Environment(\.dismiss) private var dismiss
+    @Query private var entries: [WritingEntry] // On récupère toutes les entrées pour le calcul global
     
-    // Sauvegarde automatique du brouillon
-    @AppStorage("draft_content") private var content: String = ""
+    // Pour les nouveaux textes
+    @AppStorage("draft_content") private var draftContent: String = ""
+    
+    // Pour l'édition
+    @State private var content: String = ""
+    var stats: UserStats
+    var entryToEdit: WritingEntry?
     
     @State private var wordCount: Int = 0
     @FocusState private var isFocused: Bool
-    
-    var stats: UserStats
     let haptic = UIImpactFeedbackGenerator(style: .light)
     
     var body: some View {
         NavigationStack {
             VStack(spacing: 0) {
-                // Compteur de mots animé
                 wordCounterHeader
                 
-                // Éditeur de texte Zen
                 TextEditor(text: $content)
-                    .font(.custom("Georgia", size: 20)) // Police plus agréable pour l'écriture
+                    .font(.custom("Georgia", size: 20))
                     .lineSpacing(8)
                     .padding()
                     .focused($isFocused)
@@ -32,7 +35,7 @@ struct EditorView: View {
                 
                 Spacer()
             }
-            .navigationTitle("Aujourd'hui")
+            .navigationTitle(entryToEdit == nil ? "Aujourd'hui" : "Modifier")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
@@ -40,7 +43,7 @@ struct EditorView: View {
                         .foregroundColor(.gray)
                 }
                 ToolbarItem(placement: .confirmationAction) {
-                    Button("Publier") {
+                    Button(entryToEdit == nil ? "Publier" : "Enregistrer") {
                         save()
                     }
                     .disabled(content.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
@@ -51,6 +54,11 @@ struct EditorView: View {
             }
         }
         .onAppear {
+            if let entry = entryToEdit {
+                content = entry.content
+            } else {
+                content = draftContent
+            }
             isFocused = true
             wordCount = countWords(content)
         }
@@ -77,13 +85,9 @@ struct EditorView: View {
                 }
             }
             
-            // Jauge de progression (Cap à 250 mots)
             GeometryReader { geo in
                 ZStack(alignment: .leading) {
-                    Capsule()
-                        .fill(Color.gray.opacity(0.1))
-                        .frame(height: 8)
-                    
+                    Capsule().fill(Color.gray.opacity(0.1)).frame(height: 8)
                     Capsule()
                         .fill(LinearGradient(colors: [.orange, .yellow], startPoint: .leading, endPoint: .trailing))
                         .frame(width: geo.size.width * min(CGFloat(wordCount) / 250.0, 1.0), height: 8)
@@ -91,6 +95,12 @@ struct EditorView: View {
                 }
             }
             .frame(height: 8)
+            
+            // Texte de coaching contextuel
+            Text(coachingText)
+                .font(.caption2.bold())
+                .foregroundColor(.orange.opacity(0.8))
+                .frame(maxWidth: .infinity, alignment: .trailing)
         }
         .padding(.horizontal, 25)
         .padding(.vertical, 15)
@@ -98,13 +108,22 @@ struct EditorView: View {
         .shadow(color: .black.opacity(0.03), radius: 5, x: 0, y: 2)
     }
     
+    private var coachingText: String {
+        if wordCount < 150 {
+            return "OBJECTIF : 150 MOTS (+5 PTS)"
+        } else if wordCount < 200 {
+            return "OBJECTIF : 200 MOTS (+5 PTS)"
+        } else if wordCount < 250 {
+            return "OBJECTIF : 250 MOTS (+5 PTS)"
+        } else {
+            return "GAIN MAXIMUM ATTEINT ! 🏆"
+        }
+    }
+    
     private func updateWordCount(oldValue: String, newValue: String) {
         let newCount = countWords(newValue)
         if newCount != wordCount {
-            withAnimation(.spring()) {
-                wordCount = newCount
-            }
-            // Feedback haptique tous les 10 mots
+            withAnimation(.spring()) { wordCount = newCount }
             if newCount > 0 && newCount % 10 == 0 && newCount > countWords(oldValue) {
                 haptic.impactOccurred()
             }
@@ -117,21 +136,29 @@ struct EditorView: View {
     
     @MainActor
     private func save() {
-        let entry = WritingEntry(content: content)
-        modelContext.insert(entry)
+        let audioSession = AVAudioSession.sharedInstance()
+        try? audioSession.setCategory(.ambient, mode: .default)
+        try? audioSession.setActive(true)
+
+        if let entry = entryToEdit {
+            entry.content = content
+            entry.wordCount = countWords(content)
+        } else {
+            let entry = WritingEntry(content: content)
+            modelContext.insert(entry)
+            NotificationManager.shared.cancelReminderForToday()
+            draftContent = ""
+        }
         
-        // Mise à jour de la logique de streak
-        StreakManager.shared.processNewEntry(entry, in: stats)
+        // On demande un recalcul global basé sur la DB
+        // On passe toutes les entrées récupérées par la Query
+        // (SwiftData s'assure qu'elles sont à jour)
+        StreakManager.shared.updateStats(in: stats, allEntries: entries)
         
-        // Annuler le rappel pour aujourd'hui
-        NotificationManager.shared.cancelReminderForToday()
+        // Son de succès (1407 est souvent plus fiable que 1025)
+        AudioServicesPlaySystemSound(1407)
         
-        // Vider le brouillon après publication
-        content = ""
-        
-        // Feedback haptique de succès
         UINotificationFeedbackGenerator().notificationOccurred(.success)
-        
         dismiss()
     }
 }
