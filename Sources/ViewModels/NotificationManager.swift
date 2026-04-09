@@ -24,9 +24,9 @@ class NotificationManager {
         content.body = "N'oubliez pas d'écrire quelques mots pour maintenir votre série !"
         content.sound = .default
         
-        // Configuration pour 22h00
+        // Configuration pour 21h00
         var dateComponents = DateComponents()
-        dateComponents.hour = 22
+        dateComponents.hour = 21
         dateComponents.minute = 0
         
         let trigger = UNCalendarNotificationTrigger(dateMatching: dateComponents, repeats: true)
