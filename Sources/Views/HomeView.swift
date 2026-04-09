@@ -223,6 +223,7 @@ struct HomeView: View {
                         showingInfo = true
                     } label: {
                         Image(systemName: "info.circle")
+                            .foregroundColor(.primary)
                     }
                 }
             }
