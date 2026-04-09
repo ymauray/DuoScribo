@@ -5,7 +5,8 @@ struct StreakFlameView: View {
     let streak: Int
     let isActive: Bool
     
-    @State private var scale = 1.0
+    @State private var pulseScale = 1.0
+    @State private var burstScale = 1.0
     
     var body: some View {
         VStack(spacing: -10) {
@@ -23,7 +24,8 @@ struct StreakFlameView: View {
                         AnyShapeStyle(LinearGradient(colors: [.orange, .red], startPoint: .top, endPoint: .bottom)) : 
                         AnyShapeStyle(Color.gray.opacity(0.3))
                     )
-                    .scaleEffect(scale)
+                    .scaleEffect(isActive ? pulseScale : 1.0)
+                    .scaleEffect(burstScale)
                 
                 Text("\(streak)")
                     .font(.system(size: 48, weight: .black, design: .rounded))
@@ -36,12 +38,62 @@ struct StreakFlameView: View {
                 .foregroundColor(isActive ? .orange : .gray)
                 .padding(.top, 20)
         }
-        .contentShape(Rectangle()) // Rend toute la zone cliquable
+        .contentShape(Rectangle())
         .onAppear {
-            if isActive {
-                withAnimation(.easeInOut(duration: 1.0).repeatForever(autoreverses: true)) {
-                    scale = 1.1
-                }
+            updateAnimation()
+        }
+        .onChange(of: isActive) { oldValue, newValue in
+            if newValue {
+                triggerBurst()
+            }
+            updateAnimation()
+        }
+    }
+    
+    private func updateAnimation() {
+        if isActive {
+            withAnimation(.easeInOut(duration: 1.2).repeatForever(autoreverses: true)) {
+                pulseScale = 1.1
+            }
+        } else {
+            withAnimation(.default) {
+                pulseScale = 1.0
+            }
+        }
+    }
+    
+    private func triggerBurst() {
+        // Effet de jaillissement
+        withAnimation(.spring(response: 0.3, dampingFraction: 0.4, blendDuration: 0)) {
+            burstScale = 1.4
+        }
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+            withAnimation(.spring()) {
+                burstScale = 1.0
+            }
+        }
+    }
+}
+
+struct ConfettiView: View {
+    @State private var animate = false
+    let colors: [Color] = [.orange, .yellow, .red]
+    
+    var body: some View {
+        ZStack {
+            ForEach(0..<20) { i in
+                Circle()
+                    .fill(colors.randomElement()!)
+                    .frame(width: CGFloat.random(in: 5...12))
+                    .offset(x: animate ? CGFloat.random(in: -150...150) : 0,
+                            y: animate ? CGFloat.random(in: -200...200) : 0)
+                    .opacity(animate ? 0 : 1)
+                    .scaleEffect(animate ? 0.5 : 1)
+            }
+        }
+        .onAppear {
+            withAnimation(.easeOut(duration: 1.5)) {
+                animate = true
             }
         }
     }
@@ -49,12 +101,15 @@ struct StreakFlameView: View {
 
 struct HomeView: View {
     @Environment(\.modelContext) private var modelContext
-    @Query private var stats: [UserStats]
+    @Query(sort: \UserStats.totalPoints, order: .reverse) private var stats: [UserStats]
     @Query(sort: \WritingEntry.date, order: .reverse) private var entries: [WritingEntry]
     
     @State private var showingEditor = false
+    @State private var showingInfo = false
+    @State private var editingEntry: WritingEntry? = nil
     @State private var resetTapCount = 0
     @State private var showingResetAlert = false
+    @State private var showConfetti = false
     
     private var userStats: UserStats {
         if let existing = stats.first {
@@ -72,17 +127,14 @@ struct HomeView: View {
     }
     
     var body: some View {
-        TabView {
-            NavigationStack {
+        NavigationStack {
+            ZStack {
                 List {
-                    // Section En-tête (Stats)
                     Section {
                         VStack(spacing: 30) {
                             StreakFlameView(streak: userStats.currentStreak, isActive: hasWrittenToday)
                                 .padding(.vertical, 20)
-                                .onTapGesture {
-                                    handleFlameTap()
-                                }
+                                .onTapGesture { handleFlameTap() }
                             
                             HStack(spacing: 20) {
                                 statCard(title: "POINTS", value: "\(userStats.totalPoints)", color: .yellow, icon: "star.fill")
@@ -94,12 +146,11 @@ struct HomeView: View {
                         .listRowInsets(EdgeInsets())
                     }
                     
-                    // Bouton d'écriture
                     Section {
                         Button(action: { showingEditor = true }) {
                             HStack {
                                 Image(systemName: hasWrittenToday ? "pencil.and.outline" : "bolt.fill")
-                                Text(hasWrittenToday ? "Continuer à écrire" : "Sauver ma série")
+                                Text(hasWrittenToday ? "Continuer à écrire" : "Prolonger ma série")
                             }
                             .font(.headline)
                             .foregroundColor(.white)
@@ -114,7 +165,6 @@ struct HomeView: View {
                         .listRowInsets(EdgeInsets(top: 0, leading: 20, bottom: 20, trailing: 20))
                     }
                     
-                    // Section Historique
                     Section(header: Text("VOS RÉCITS").font(.caption.bold())) {
                         if entries.isEmpty {
                             Text("Prêt à écrire ? Vos textes apparaîtront ici.")
@@ -123,6 +173,12 @@ struct HomeView: View {
                         } else {
                             ForEach(entries) { entry in
                                 entryRow(for: entry)
+                                    .contentShape(Rectangle())
+                                    .onTapGesture {
+                                        if Calendar.current.isDate(entry.date, inSameDayAs: Date()) {
+                                            editingEntry = entry
+                                        }
+                                    }
                                     .swipeActions(edge: .trailing) {
                                         if Calendar.current.isDate(entry.date, inSameDayAs: Date()) {
                                             Button(role: .destructive) {
@@ -132,30 +188,59 @@ struct HomeView: View {
                                             }
                                         }
                                     }
+                                    .swipeActions(edge: .leading) {
+                                        Button {
+                                            UIPasteboard.general.string = entry.content
+                                            UINotificationFeedbackGenerator().notificationOccurred(.success)
+                                        } label: {
+                                            Label("Copier", systemImage: "doc.on.doc")
+                                        }
+                                        .tint(.blue)
+                                    }
                             }
                         }
                     }
                 }
-                .navigationTitle("DuoScribo")
-                .background(Color(uiColor: .systemGroupedBackground))
-                .sheet(isPresented: $showingEditor) {
-                    EditorView(stats: userStats)
-                }
-                .alert("Réinitialisation complète ?", isPresented: $showingResetAlert) {
-                    Button("Annuler", role: .cancel) { resetTapCount = 0 }
-                    Button("Tout effacer", role: .destructive) { performFullReset() }
-                } message: {
-                    Text("Cela va supprimer tous vos textes, vos points et votre série. Cette action est irréversible.")
+                
+                if showConfetti {
+                    ConfettiView()
+                        .allowsHitTesting(false)
                 }
             }
-            .tabItem {
-                Label("Écriture", systemImage: "pencil.line")
-            }
-            
-            SocialView()
-                .tabItem {
-                    Label("Défis", systemImage: "person.2.fill")
+            .navigationTitle("DuoScribo")
+            .toolbar {
+                ToolbarItem(placement: .navigationBarTrailing) {
+                    Button {
+                        showingInfo = true
+                    } label: {
+                        Image(systemName: "info.circle")
+                    }
                 }
+            }
+            .background(Color(uiColor: .systemGroupedBackground))
+            .sheet(isPresented: $showingInfo) {
+                PointsInfoView()
+            }
+            .sheet(isPresented: $showingEditor) {
+                EditorView(stats: userStats)
+            }
+            .sheet(item: $editingEntry) { entry in
+                EditorView(stats: userStats, entryToEdit: entry)
+            }
+            .onChange(of: hasWrittenToday) { oldValue, newValue in
+                if newValue && !oldValue {
+                    withAnimation { showConfetti = true }
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
+                        showConfetti = false
+                    }
+                }
+            }
+            .alert("Réinitialisation complète ?", isPresented: $showingResetAlert) {
+                Button("Annuler", role: .cancel) { resetTapCount = 0 }
+                Button("Tout effacer", role: .destructive) { performFullReset() }
+            } message: {
+                Text("Cela va supprimer tous vos textes, vos points et votre série. Cette action est irréversible.")
+            }
         }
         .tint(.orange)
     }
@@ -165,12 +250,8 @@ struct HomeView: View {
         if resetTapCount >= 7 {
             showingResetAlert = true
         }
-        
-        // Réinitialise le compteur après 2 secondes d'inactivité
         DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
-            if !showingResetAlert {
-                resetTapCount = 0
-            }
+            if !showingResetAlert { resetTapCount = 0 }
         }
     }
     
@@ -181,29 +262,26 @@ struct HomeView: View {
             modelContext.delete(entry)
         }
         
-        // 2. Réinitialiser les stats
+        // 2. Réinitialiser les stats à zéro absolu
         userStats.totalPoints = 0
         userStats.currentStreak = 0
         userStats.longestStreak = 0
         userStats.lastWritingDate = nil
         
-        resetTapCount = 0
+        // 3. Forcer la sauvegarde
+        try? modelContext.save()
         
-        // Feedback haptique de "nettoyage"
+        resetTapCount = 0
         UINotificationFeedbackGenerator().notificationOccurred(.warning)
     }
     
     private func statCard(title: String, value: String, color: Color, icon: String) -> some View {
         VStack(alignment: .leading, spacing: 8) {
             HStack {
-                Image(systemName: icon)
-                    .foregroundColor(color)
-                Text(title)
-                    .font(.caption.bold())
-                    .foregroundColor(.gray)
+                Image(systemName: icon).foregroundColor(color)
+                Text(title).font(.caption.bold()).foregroundColor(.gray)
             }
-            Text(value)
-                .font(.system(.title2, design: .rounded).bold())
+            Text(value).font(.system(.title2, design: .rounded).bold())
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding()
@@ -219,9 +297,16 @@ struct HomeView: View {
                     .font(.caption.bold())
                     .foregroundColor(.orange)
                 Spacer()
-                Text("\(entry.wordCount) mots")
-                    .font(.caption)
-                    .foregroundColor(.gray)
+                HStack(spacing: 4) {
+                    if entry.wordCount >= 250 {
+                        Image(systemName: "trophy.fill")
+                            .foregroundColor(.orange)
+                            .font(.caption)
+                    }
+                    Text("\(entry.wordCount) mots")
+                        .font(.caption)
+                        .foregroundColor(.gray)
+                }
             }
             Text(entry.content)
                 .lineLimit(3)
@@ -233,8 +318,15 @@ struct HomeView: View {
     @MainActor
     private func deleteEntry(_ entry: WritingEntry) {
         withAnimation {
-            StreakManager.shared.processDeletion(of: entry, in: userStats, allEntries: entries)
             modelContext.delete(entry)
+            
+            // On recalcule tout après suppression
+            StreakManager.shared.updateStats(in: userStats, allEntries: entries.filter { $0.id != entry.id })
+            
+            // Si après suppression on n'a plus rien aujourd'hui, on remet le rappel
+            if !hasWrittenToday {
+                NotificationManager.shared.scheduleDailyReminder()
+            }
         }
     }
 }

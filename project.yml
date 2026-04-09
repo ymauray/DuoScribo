@@ -1,6 +1,8 @@
 name: DuoScribo
 options:
   bundleIdPrefix: ch.yannickmauray
+  developmentLanguage: fr
+  localizations: [fr, en]
 targets:
   DuoScribo:
     type: application
