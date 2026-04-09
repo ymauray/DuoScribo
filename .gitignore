@@ -1,0 +1,30 @@
+# Xcode
+#
+# gitignore contributors: remember to update Global/Xcode.caches.gitignore, Global/Xcode.temporary.gitignore and Global/Xcode.speed.gitignore
+
+## User settings
+xcuserdata/
+
+## Compatibility with different Xcode versions
+*.mode1v3
+*.mode2v3
+*.perspectivev3
+
+## Backup
+*.moved-aside
+
+## XcodeGen
+*.xcodeproj
+*.xcworkspace
+
+## Build results
+build/
+DerivedData/
+build-output/
+build-output-iphone/
+build-output-ipad/
+
+## Other
+.DS_Store
+*.swp
+*.lock
