@@ -1,0 +1,14 @@
+version: 2
+updates:
+  # Maintenir les GitHub Actions à jour
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+
+  # Si vous ajoutez des dépendances via Swift Package Manager plus tard
+  # Dependabot pourra les gérer ici :
+  # - package-ecosystem: "swift"
+  #   directory: "/"
+  #   schedule:
+  #     interval: "weekly"
