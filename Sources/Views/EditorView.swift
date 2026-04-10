@@ -55,7 +55,7 @@ struct EditorView: View {
         }
         .onAppear {
             if let entry = entryToEdit {
-                content = entry.content
+                content = entry.content ?? ""
             } else {
                 content = draftContent
             }

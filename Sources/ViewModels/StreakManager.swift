@@ -13,7 +13,7 @@ class StreakManager {
         let today = calendar.startOfDay(for: Date())
         
         // 1. Calcul de la Série et du Record
-        let uniqueDates = allEntries.map { calendar.startOfDay(for: $0.date) }
+        let uniqueDates = allEntries.map { calendar.startOfDay(for: $0.date ?? Date()) }
             .unique()
             .sorted() // Du plus ancien au plus récent pour le calcul du record
         
@@ -58,13 +58,13 @@ class StreakManager {
         }
         
         // 2. Recalcul total des points
-        let entriesByDay = Dictionary(grouping: allEntries) { calendar.startOfDay(for: $0.date) }
+        let entriesByDay = Dictionary(grouping: allEntries) { calendar.startOfDay(for: $0.date ?? Date()) }
         var totalXP = 0
         
         // On repasse sur chaque jour pour calculer l'XP acquise
         for day in uniqueDates {
             let dayEntries = entriesByDay[day] ?? []
-            let dailyWords = dayEntries.reduce(0) { $0 + $1.wordCount }
+            let dailyWords = dayEntries.reduce(0) { $0 + ($1.wordCount ?? 0) }
             
             // Règle: 1-149 mots = 10 pts, 150-199 = 15 pts, 200-249 = 20 pts, 250+ = 25 pts
             let rawPoints = Double(dailyWords) * 0.1

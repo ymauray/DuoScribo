@@ -127,7 +127,7 @@ struct HomeView: View {
     
     private var groupedEntries: [(Date, [WritingEntry])] {
         let groups = Dictionary(grouping: entries) { entry in
-            Calendar.current.startOfDay(for: entry.date)
+            Calendar.current.startOfDay(for: entry.date ?? Date())
         }
         return groups.sorted { $0.key > $1.key }
     }
@@ -139,13 +139,13 @@ struct HomeView: View {
                     // Section unique pour le Tableau de Bord (Flamme + Stats + Bouton)
                     Section {
                         VStack(spacing: 35) {
-                            StreakFlameView(streak: userStats.currentStreak, isActive: hasWrittenToday)
+                            StreakFlameView(streak: userStats.currentStreak ?? 0, isActive: hasWrittenToday)
                                 .padding(.top, 20)
                                 .onTapGesture { handleFlameTap() }
                             
                             HStack(spacing: 15) {
-                                statCard(title: "POINTS", value: "\(userStats.totalPoints)", color: .yellow, icon: "star.fill")
-                                statCard(title: "RECORD", value: "\(userStats.longestStreak)j", color: .blue, icon: "trophy.fill")
+                                statCard(title: "POINTS", value: "\(userStats.totalPoints ?? 0)", color: .yellow, icon: "star.fill")
+                                statCard(title: "RECORD", value: "\(userStats.longestStreak ?? 0)j", color: .blue, icon: "trophy.fill")
                             }
                             
                             Button(action: { showingEditor = true }) {
@@ -183,12 +183,12 @@ struct HomeView: View {
                                     entryRow(for: entry)
                                         .contentShape(Rectangle())
                                         .onTapGesture {
-                                            if Calendar.current.isDate(entry.date, inSameDayAs: Date()) {
+                                            if Calendar.current.isDate(entry.date ?? Date(), inSameDayAs: Date()) {
                                                 editingEntry = entry
                                             }
                                         }
                                         .swipeActions(edge: .trailing) {
-                                            if Calendar.current.isDate(entry.date, inSameDayAs: Date()) {
+                                            if Calendar.current.isDate(entry.date ?? Date(), inSameDayAs: Date()) {
                                                 Button(role: .destructive) {
                                                     deleteEntry(entry)
                                                 } label: {
@@ -198,7 +198,7 @@ struct HomeView: View {
                                         }
                                         .swipeActions(edge: .leading) {
                                             Button {
-                                                UIPasteboard.general.string = entry.content
+                                                UIPasteboard.general.string = entry.content ?? ""
                                                 UINotificationFeedbackGenerator().notificationOccurred(.success)
                                             } label: {
                                                 Label("Copier", systemImage: "doc.on.doc")
@@ -256,7 +256,7 @@ struct HomeView: View {
     }
     
     private func dailyHeader(date: Date, entries: [WritingEntry]) -> some View {
-        let totalWords = entries.reduce(0) { $0 + $1.wordCount }
+        let totalWords = entries.reduce(0) { $0 + ($1.wordCount ?? 0) }
         return HStack {
             Text(date, style: .date)
                 .font(.caption.bold())
@@ -309,22 +309,22 @@ struct HomeView: View {
     private func entryRow(for entry: WritingEntry) -> some View {
         VStack(alignment: .leading, spacing: 8) {
             HStack {
-                Text(entry.date, style: .time)
+                Text(entry.date ?? Date(), style: .time)
                     .font(.caption.bold())
                     .foregroundColor(.gray)
                 Spacer()
                 HStack(spacing: 4) {
-                    if entry.wordCount >= 250 {
+                    if (entry.wordCount ?? 0) >= 250 {
                         Image(systemName: "trophy.fill")
                             .foregroundColor(.orange)
                             .font(.caption)
                     }
-                    Text("\(entry.wordCount) mots")
+                    Text("\(entry.wordCount ?? 0) mots")
                         .font(.caption)
                         .foregroundColor(.gray)
                 }
             }
-            Text(entry.content)
+            Text(entry.content ?? "")
                 .lineLimit(3)
                 .font(.body)
         }
