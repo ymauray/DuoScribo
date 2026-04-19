@@ -162,9 +162,14 @@ struct HomeView: View {
                                 .shadow(color: (hasWrittenToday ? Color.primary : Color.orange).opacity(0.15), radius: 8, x: 0, y: 4)
                             }
                             .buttonStyle(.plain)
+
+                            Text("Glisser un texte à droite pour le copier, à gauche pour le supprimer")
+                                .font(.caption2)
+                                .foregroundColor(.secondary)
+                                .padding(.top, -10)
                         }
-                        .padding(.horizontal, 20) // Aligné sur les marges standards du header de section
-                        .padding(.bottom, 25)
+                        .padding(.horizontal, 20)
+                        .padding(.bottom, 10)
                         .listRowBackground(Color.clear)
                         .listRowSeparator(.hidden)
                         .listRowInsets(EdgeInsets())
