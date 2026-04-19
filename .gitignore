@@ -16,6 +16,7 @@ xcuserdata/
 ## XcodeGen
 *.xcodeproj
 *.xcworkspace
+!DuoScribo.xcodeproj
 
 ## Build results
 build/
