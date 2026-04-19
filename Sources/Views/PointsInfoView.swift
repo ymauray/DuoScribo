@@ -30,6 +30,38 @@ struct PointsInfoView: View {
                     .padding(.vertical, 5)
                 }
                 
+                Section(header: Text("Actions rapides").font(.caption.bold())) {
+                    VStack(alignment: .leading, spacing: 10) {
+                        HStack {
+                            Image(systemName: "doc.on.doc")
+                                .foregroundColor(.blue)
+                                .frame(width: 24)
+                            Text("Glisser à droite")
+                                .font(.headline)
+                        }
+                        
+                        Text("Copie le texte pour le coller où vous voulez.")
+                            .font(.subheadline)
+                            .foregroundColor(.gray)
+                        
+                        Divider()
+                            .padding(.vertical, 2)
+                        
+                        HStack {
+                            Image(systemName: "trash")
+                                .foregroundColor(.red)
+                                .frame(width: 24)
+                            Text("Glisser à gauche")
+                                .font(.headline)
+                        }
+                        
+                        Text("Supprime le texte (uniquement possible le jour même).")
+                            .font(.subheadline)
+                            .foregroundColor(.gray)
+                    }
+                    .padding(.vertical, 5)
+                }
+                
                 Section {
                     VStack(alignment: .leading, spacing: 10) {
                         Label("Rappel quotidien", systemImage: "bell.fill")

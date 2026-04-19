@@ -8,29 +8,30 @@ targets:
     type: application
     platform: iOS
     deploymentTarget: "17.0"
+    bundleId: ch.yannickmauray.DuoScribo
     sources: [Sources]
     settings:
       base:
-        GENERATE_INFOPLIST_FILE: YES
-        INFOPLIST_KEY_UISupportedInterfaceOrientations:
-          - UIInterfaceOrientationPortrait
-          - UIInterfaceOrientationPortraitUpsideDown
-          - UIInterfaceOrientationLandscapeLeft
-          - UIInterfaceOrientationLandscapeRight
-        INFOPLIST_KEY_UIBackgroundModes: ["remote-notification"]
-        INFOPLIST_KEY_UILaunchScreen_Generation: YES
-        INFOPLIST_KEY_UILaunchScreen_ImageName: SplashIcon
-        INFOPLIST_KEY_UILaunchScreen_BackgroundColor: SplashColor
+        INFOPLIST_FILE: Sources/DuoScribo-Info.plist
+        GENERATE_INFOPLIST_FILE: NO
+        DEVELOPMENT_TEAM: WFMP87LTRX
+        CODE_SIGN_IDENTITY: "Apple Development"
+        CODE_SIGN_ENTITLEMENTS: Sources/DuoScribo.entitlements
         ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
         ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLORNAME: SplashColor
         MARKETING_VERSION: 1.0.0
         CURRENT_PROJECT_VERSION: 1
         TARGETED_DEVICE_FAMILY: "1,2"
         SWIFT_VERSION: 5.9
-        DEVELOPMENT_TEAM: WFMP87LTRX
-        CODE_SIGN_IDENTITY: "Apple Development"
-    entitlements:
-      path: Sources/DuoScribo.entitlements
+    capabilities:
+      - icloud:
+          services: [CloudKit]
+          containerIdentifiers: [iCloud.ch.yannickmauray.DuoScribo]
+      - pushNotifications: {}
+      - backgroundModes: [remote-notification]
+    info:
+      properties:
+        ITSAppUsesNonExemptEncryption: false
   DuoScriboTests:
     type: bundle.unit-test
     platform: iOS

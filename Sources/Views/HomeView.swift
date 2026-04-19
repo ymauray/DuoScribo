@@ -29,7 +29,7 @@ struct StreakFlameView: View {
                 
                 Text("\(streak)")
                     .font(.system(size: 48, weight: .black, design: .rounded))
-                    .foregroundColor(isActive ? Color(red: 0.05, green: 0.1, blue: 0.3) : .gray)
+                    .foregroundColor(isActive ? (Color(uiColor: .label)) : .gray)
                     .offset(y: 25)
             }
             
@@ -127,7 +127,7 @@ struct HomeView: View {
     
     private var groupedEntries: [(Date, [WritingEntry])] {
         let groups = Dictionary(grouping: entries) { entry in
-            Calendar.current.startOfDay(for: entry.date)
+            Calendar.current.startOfDay(for: entry.date ?? Date())
         }
         return groups.sorted { $0.key > $1.key }
     }
@@ -139,13 +139,13 @@ struct HomeView: View {
                     // Section unique pour le Tableau de Bord (Flamme + Stats + Bouton)
                     Section {
                         VStack(spacing: 35) {
-                            StreakFlameView(streak: userStats.currentStreak, isActive: hasWrittenToday)
+                            StreakFlameView(streak: userStats.currentStreak ?? 0, isActive: hasWrittenToday)
                                 .padding(.top, 20)
                                 .onTapGesture { handleFlameTap() }
                             
                             HStack(spacing: 15) {
-                                statCard(title: "POINTS", value: "\(userStats.totalPoints)", color: .yellow, icon: "star.fill")
-                                statCard(title: "RECORD", value: "\(userStats.longestStreak)j", color: .blue, icon: "trophy.fill")
+                                statCard(title: "POINTS", value: "\(userStats.totalPoints ?? 0)", color: .yellow, icon: "star.fill")
+                                statCard(title: "RECORD", value: "\(userStats.longestStreak ?? 0)j", color: .blue, icon: "trophy.fill")
                             }
                             
                             Button(action: { showingEditor = true }) {
@@ -159,12 +159,17 @@ struct HomeView: View {
                                 .frame(maxWidth: .infinity)
                                 .background(hasWrittenToday ? Color.gray : Color.orange)
                                 .cornerRadius(16)
-                                .shadow(color: (hasWrittenToday ? Color.black : Color.orange).opacity(0.15), radius: 8, x: 0, y: 4)
+                                .shadow(color: (hasWrittenToday ? Color.primary : Color.orange).opacity(0.15), radius: 8, x: 0, y: 4)
                             }
                             .buttonStyle(.plain)
+
+                            Text("Glisser un texte à droite pour le copier, à gauche pour le supprimer")
+                                .font(.caption2)
+                                .foregroundColor(.secondary)
+                                .padding(.top, -10)
                         }
-                        .padding(.horizontal, 20) // Aligné sur les marges standards du header de section
-                        .padding(.bottom, 25)
+                        .padding(.horizontal, 20)
+                        .padding(.bottom, 10)
                         .listRowBackground(Color.clear)
                         .listRowSeparator(.hidden)
                         .listRowInsets(EdgeInsets())
@@ -183,12 +188,10 @@ struct HomeView: View {
                                     entryRow(for: entry)
                                         .contentShape(Rectangle())
                                         .onTapGesture {
-                                            if Calendar.current.isDate(entry.date, inSameDayAs: Date()) {
-                                                editingEntry = entry
-                                            }
+                                            editingEntry = entry
                                         }
                                         .swipeActions(edge: .trailing) {
-                                            if Calendar.current.isDate(entry.date, inSameDayAs: Date()) {
+                                            if Calendar.current.isDate(entry.date ?? Date(), inSameDayAs: Date()) {
                                                 Button(role: .destructive) {
                                                     deleteEntry(entry)
                                                 } label: {
@@ -198,7 +201,7 @@ struct HomeView: View {
                                         }
                                         .swipeActions(edge: .leading) {
                                             Button {
-                                                UIPasteboard.general.string = entry.content
+                                                UIPasteboard.general.string = entry.content ?? ""
                                                 UINotificationFeedbackGenerator().notificationOccurred(.success)
                                             } label: {
                                                 Label("Copier", systemImage: "doc.on.doc")
@@ -256,7 +259,7 @@ struct HomeView: View {
     }
     
     private func dailyHeader(date: Date, entries: [WritingEntry]) -> some View {
-        let totalWords = entries.reduce(0) { $0 + $1.wordCount }
+        let totalWords = entries.reduce(0) { $0 + ($1.wordCount ?? 0) }
         return HStack {
             Text(date, style: .date)
                 .font(.caption.bold())
@@ -301,30 +304,30 @@ struct HomeView: View {
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding()
-        .background(Color.white)
+        .background(Color(uiColor: .secondarySystemGroupedBackground))
         .cornerRadius(15)
-        .shadow(color: .black.opacity(0.03), radius: 5, x: 0, y: 2)
+        .shadow(color: Color.primary.opacity(0.03), radius: 5, x: 0, y: 2)
     }
     
     private func entryRow(for entry: WritingEntry) -> some View {
         VStack(alignment: .leading, spacing: 8) {
             HStack {
-                Text(entry.date, style: .time)
+                Text(entry.date ?? Date(), style: .time)
                     .font(.caption.bold())
                     .foregroundColor(.gray)
                 Spacer()
                 HStack(spacing: 4) {
-                    if entry.wordCount >= 250 {
+                    if (entry.wordCount ?? 0) >= 250 {
                         Image(systemName: "trophy.fill")
                             .foregroundColor(.orange)
                             .font(.caption)
                     }
-                    Text("\(entry.wordCount) mots")
+                    Text("\(entry.wordCount ?? 0) mots")
                         .font(.caption)
                         .foregroundColor(.gray)
                 }
             }
-            Text(entry.content)
+            Text(entry.content ?? "")
                 .lineLimit(3)
                 .font(.body)
         }
