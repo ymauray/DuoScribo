@@ -188,9 +188,7 @@ struct HomeView: View {
                                     entryRow(for: entry)
                                         .contentShape(Rectangle())
                                         .onTapGesture {
-                                            if Calendar.current.isDate(entry.date ?? Date(), inSameDayAs: Date()) {
-                                                editingEntry = entry
-                                            }
+                                            editingEntry = entry
                                         }
                                         .swipeActions(edge: .trailing) {
                                             if Calendar.current.isDate(entry.date ?? Date(), inSameDayAs: Date()) {

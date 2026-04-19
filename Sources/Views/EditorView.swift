@@ -19,6 +19,11 @@ struct EditorView: View {
     @FocusState private var isFocused: Bool
     let haptic = UIImpactFeedbackGenerator(style: .light)
     
+    private var isReadOnly: Bool {
+        guard let date = entryToEdit?.date else { return false }
+        return !Calendar.current.isDate(date, inSameDayAs: Date())
+    }
+    
     var body: some View {
         NavigationStack {
             VStack(spacing: 0) {
@@ -30,6 +35,7 @@ struct EditorView: View {
                     .padding()
                     .focused($isFocused)
                     .scrollContentBackground(.hidden)
+                    .disabled(isReadOnly)
                     .onChange(of: content) { oldValue, newValue in
                         updateWordCount(oldValue: oldValue, newValue: newValue)
                     }
@@ -37,21 +43,23 @@ struct EditorView: View {
                 Spacer()
             }
             .background(Color(uiColor: .systemBackground))
-            .navigationTitle(entryToEdit == nil ? "Aujourd'hui" : "Modifier")
+            .navigationTitle(entryToEdit == nil ? "Aujourd'hui" : (isReadOnly ? formattedDate(entryToEdit?.date) : "Modifier"))
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
-                    Button("Fermer") { dismiss() }
+                    Button(isReadOnly ? "Quitter" : "Fermer") { dismiss() }
                         .foregroundColor(.gray)
                 }
-                ToolbarItem(placement: .confirmationAction) {
-                    Button(entryToEdit == nil ? "Publier" : "Enregistrer") {
-                        save()
+                if !isReadOnly {
+                    ToolbarItem(placement: .confirmationAction) {
+                        Button(entryToEdit == nil ? "Publier" : "Enregistrer") {
+                            save()
+                        }
+                        .disabled(content.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+                        .buttonStyle(.borderedProminent)
+                        .tint(.orange)
+                        .bold()
                     }
-                    .disabled(content.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
-                    .buttonStyle(.borderedProminent)
-                    .tint(.orange)
-                    .bold()
                 }
             }
         }
@@ -61,9 +69,20 @@ struct EditorView: View {
             } else {
                 content = draftContent
             }
-            isFocused = true
+            if !isReadOnly {
+                isFocused = true
+            }
             wordCount = countWords(content)
         }
+    }
+    
+    private func formattedDate(_ date: Date?) -> String {
+        guard let date = date else { return "" }
+        let formatter = DateFormatter()
+        formatter.dateStyle = .medium
+        formatter.timeStyle = .short
+        formatter.locale = Locale(identifier: "fr_FR")
+        return formatter.string(from: date)
     }
     
     private var wordCounterHeader: some View {
@@ -99,10 +118,12 @@ struct EditorView: View {
             .frame(height: 8)
             
             // Texte de coaching contextuel
-            Text(coachingText)
-                .font(.caption2.bold())
-                .foregroundColor(.orange.opacity(0.8))
-                .frame(maxWidth: .infinity, alignment: .trailing)
+            if !isReadOnly {
+                Text(coachingText)
+                    .font(.caption2.bold())
+                    .foregroundColor(.orange.opacity(0.8))
+                    .frame(maxWidth: .infinity, alignment: .trailing)
+            }
         }
         .padding(.horizontal, 25)
         .padding(.vertical, 15)
