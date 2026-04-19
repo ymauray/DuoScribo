@@ -29,7 +29,7 @@ struct StreakFlameView: View {
                 
                 Text("\(streak)")
                     .font(.system(size: 48, weight: .black, design: .rounded))
-                    .foregroundColor(isActive ? Color(red: 0.05, green: 0.1, blue: 0.3) : .gray)
+                    .foregroundColor(isActive ? (Color(uiColor: .label)) : .gray)
                     .offset(y: 25)
             }
             
@@ -159,7 +159,7 @@ struct HomeView: View {
                                 .frame(maxWidth: .infinity)
                                 .background(hasWrittenToday ? Color.gray : Color.orange)
                                 .cornerRadius(16)
-                                .shadow(color: (hasWrittenToday ? Color.black : Color.orange).opacity(0.15), radius: 8, x: 0, y: 4)
+                                .shadow(color: (hasWrittenToday ? Color.primary : Color.orange).opacity(0.15), radius: 8, x: 0, y: 4)
                             }
                             .buttonStyle(.plain)
                         }
@@ -301,9 +301,9 @@ struct HomeView: View {
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding()
-        .background(Color.white)
+        .background(Color(uiColor: .secondarySystemGroupedBackground))
         .cornerRadius(15)
-        .shadow(color: .black.opacity(0.03), radius: 5, x: 0, y: 2)
+        .shadow(color: Color.primary.opacity(0.03), radius: 5, x: 0, y: 2)
     }
     
     private func entryRow(for entry: WritingEntry) -> some View {

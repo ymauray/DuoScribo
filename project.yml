@@ -29,6 +29,9 @@ targets:
           containerIdentifiers: [iCloud.ch.yannickmauray.DuoScribo]
       - pushNotifications: {}
       - backgroundModes: [remote-notification]
+    info:
+      properties:
+        ITSAppUsesNonExemptEncryption: false
   DuoScriboTests:
     type: bundle.unit-test
     platform: iOS

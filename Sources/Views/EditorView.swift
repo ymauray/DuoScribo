@@ -29,12 +29,14 @@ struct EditorView: View {
                     .lineSpacing(8)
                     .padding()
                     .focused($isFocused)
+                    .scrollContentBackground(.hidden)
                     .onChange(of: content) { oldValue, newValue in
                         updateWordCount(oldValue: oldValue, newValue: newValue)
                     }
                 
                 Spacer()
             }
+            .background(Color(uiColor: .systemBackground))
             .navigationTitle(entryToEdit == nil ? "Aujourd'hui" : "Modifier")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
@@ -104,8 +106,8 @@ struct EditorView: View {
         }
         .padding(.horizontal, 25)
         .padding(.vertical, 15)
-        .background(Color.white)
-        .shadow(color: .black.opacity(0.03), radius: 5, x: 0, y: 2)
+        .background(Color(uiColor: .secondarySystemGroupedBackground))
+        .shadow(color: Color.primary.opacity(0.03), radius: 5, x: 0, y: 2)
     }
     
     private var coachingText: String {
