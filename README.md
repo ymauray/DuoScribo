@@ -52,5 +52,24 @@ DuoScribo est un pur produit de l'écosystème Apple moderne :
 
 ---
 
+## 🔄 Intégration continue et release
+
+### GitHub Actions — la qualité
+
+Les workflows GitHub **ne font pas la release**. Le workflow [`iOS CI`](.github/workflows/ios.yml)
+régénère le projet avec XcodeGen, compile l'app et exécute les tests (`DuoScriboTests`) sur
+simulateur, à chaque push et pull request sur `main`.
+
+La page [`docs/`](docs/) est publiée par GitHub Pages (workflow intégré
+« pages-build-deployment », donc absent du dépôt) → https://ymauray.github.io/DuoScribo/
+
+### Xcode Cloud — la livraison
+
+La **livraison sur TestFlight et l'App Store est assurée par Xcode Cloud** (workflow « Default »,
+configuré côté App Store Connect, pas dans le dépôt) : il archive l'app à chaque commit sur
+`main`. La version marketing (`MARKETING_VERSION`) se maintient dans `project.yml`.
+
+---
+
 **Fait avec ❤️ pour les amoureux des mots.** 
 *Propulsez votre écriture vers de nouveaux sommets !* 🚀🖋️
