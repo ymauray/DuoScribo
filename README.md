@@ -1,6 +1,6 @@
 # DuoScribo ✍️🔥
 
-[![iOS CI](https://github.com/ymauray/DuoScribo/actions/workflows/ios.yml/badge.svg)](https://github.com/ymauray/DuoScribo/actions/workflows/ios.yml) [![Licence : MIT](https://img.shields.io/github/license/ymauray/DuoScribo)](LICENSE)
+[![iOS CI](https://github.com/ymauray/DuoScribo/actions/workflows/ios.yml/badge.svg)](https://github.com/ymauray/DuoScribo/actions/workflows/ios.yml) [![Licence : MIT](https://img.shields.io/github/license/ymauray/DuoScribo)](LICENSE) [![repocheck](https://img.shields.io/badge/repocheck%201.3.0-100%2F100-brightgreen)](https://github.com/ymauray/repocheck)
 
 **Transformez votre discipline d'écriture en un rituel addictif !**
 
