@@ -1,5 +1,7 @@
 # DuoScribo ✍️🔥
 
+[![iOS CI](https://github.com/ymauray/DuoScribo/actions/workflows/ios.yml/badge.svg)](https://github.com/ymauray/DuoScribo/actions/workflows/ios.yml) [![Licence : MIT](https://img.shields.io/github/license/ymauray/DuoScribo)](LICENSE)
+
 **Transformez votre discipline d'écriture en un rituel addictif !**
 
 DuoScribo est une application iOS native qui utilise la puissance de la **gamification** pour vous encourager à écrire un peu chaque jour. Inspirée par les meilleures mécaniques de DuoLingo, elle fait de chaque mot une étape vers votre succès.
